@@ -5,6 +5,7 @@ document.addEventListener('alpine:init', () => {
             instance: null,
             state: state,
             tools: tools,
+
             init() {
                 let enabledTools = {};
 
@@ -18,6 +19,7 @@ document.addEventListener('alpine:init', () => {
                     loadHtml: state,
                     plugins: [
                         "grapesjs-tailwind",
+                        "grapesjs-preset-webpage",
                     ],
                 });
                 this.instance.on('update', e => {
