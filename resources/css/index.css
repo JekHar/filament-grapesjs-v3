@@ -1,4 +1,4 @@
-@tailwind components;
+@import 'tailwindcss/components';
 
 .filament-grapesjs {
     border: 3px solid #444;
