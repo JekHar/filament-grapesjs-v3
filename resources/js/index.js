@@ -18,6 +18,9 @@ document.addEventListener('alpine:init', () => {
                     plugins: [
                         "grapesjs-tailwind",
                         "grapesjs-preset-webpage",
+                        "grapesjs-component-code-editor",
+                        "grapesjs-custom-code",
+                        ""
                     ],
                     assetManager: {
                         upload: '/grapesjs/media',
