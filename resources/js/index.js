@@ -180,6 +180,24 @@ document.addEventListener('alpine:init', () => {
                     })
                     .catch(error => console.error('Error:', error));
 
+                // Helper function to remove non-editable components from HTML
+                const removeNonEditableComponentsFromHtml = (html) => {
+                    // Create a temporary DOM element to parse the HTML
+                    const tempEl = document.createElement('div');
+                    tempEl.innerHTML = html;
+
+                    // Find and remove all elements with the gjs-non-editable class
+                    const findAndRemoveNonEditableElements = (element) => {
+                        const elements = element.getElementsByClassName('gjs-non-editable');
+                        // We need to use Array.from because the collection changes as we remove elements
+                        Array.from(elements).forEach(el => el.parentNode.removeChild(el));
+                    };
+
+                    findAndRemoveNonEditableElements(tempEl);
+
+                    return tempEl.innerHTML;
+                };
+
                 // Save content but exclude non-editable regions
                 this.instance.on('update', e => {
                     var content = this.instance.getHtml({
@@ -188,8 +206,9 @@ document.addEventListener('alpine:init', () => {
                     var extract = content.match(/<body\b[^>]*>([\s\S]*?)<\/body>/);
                     var fullContent = extract ? extract[1] : content;
 
-                    // Updated regex to match elements with the gjs-non-editable class
-                    var editableContent = fullContent.replace(/<div[^>]*class=["'][^"']*gjs-non-editable[^"']*["'][^>]*>[\s\S]*?<\/div>/g, '');
+                    // Use the DOM-based approach to remove non-editable components
+                    var editableContent = removeNonEditableComponentsFromHtml(fullContent);
+                    console.log(editableContent);
 
                     this.state = editableContent.trim();
                 });
@@ -199,9 +218,12 @@ document.addEventListener('alpine:init', () => {
                     // Store the original HTML
                     this._originalCodeViewHtml = this.instance.getHtml();
 
-                    // Get HTML without non-editable components
+                    // Get HTML without non-editable components using the DOM-based approach
                     let cleanHtml = this.instance.getHtml();
-                    cleanHtml = cleanHtml.replace(/<div[^>]*class=["'][^"']*gjs-non-editable[^"']*["'][^>]*>[\s\S]*?<\/div>/g, '');
+                    cleanHtml = removeNonEditableComponentsFromHtml(cleanHtml);
+                    console.log(cleanHtml);
+                    // Store clean HTML for later comparison
+                    this._filteredCodeViewHtml = cleanHtml;
 
                     // Set the filtered HTML for code view
                     this.instance.setCustomCode(cleanHtml);
@@ -218,6 +240,7 @@ document.addEventListener('alpine:init', () => {
                         if (this._filteredCodeViewHtml === currentCode) {
                             this.instance.DomComponents.getWrapper().set('content', this._originalCodeViewHtml);
                         }
+                        console.log(currentCode);
 
                         // Clear stored HTML
                         this._originalCodeViewHtml = null;
@@ -228,12 +251,23 @@ document.addEventListener('alpine:init', () => {
                 // Override the open-code command to use our custom handler
                 this.instance.Commands.add('open-code', {
                     run: function(editor, sender) {
-                        // Get HTML without non-editable components
-                        let cleanHtml = editor.getHtml();
-                        cleanHtml = cleanHtml.replace(/<div[^>]*class=["'][^"']*gjs-non-editable[^"']*["'][^>]*>[\s\S]*?<\/div>/g, '');
+                        // Get original HTML
+                        const originalHtml = editor.getHtml();
+
+                        // Create temp DOM element to manipulate HTML
+                        const tempEl = document.createElement('div');
+                        tempEl.innerHTML = originalHtml;
+
+                        // Find and remove all non-editable elements
+                        const nonEditableElements = tempEl.querySelectorAll('.gjs-non-editable');
+                        nonEditableElements.forEach(el => el.parentNode.removeChild(el));
+
+                        // Get clean HTML
+                        const cleanHtml = tempEl.innerHTML;
 
                         // Store clean HTML for later comparison
                         editor._filteredCodeViewHtml = cleanHtml;
+                        editor._originalCodeViewHtml = originalHtml;
 
                         // Open code editor with clean HTML
                         editor.Modal.open({
